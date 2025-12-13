@@ -1,0 +1,97 @@
+# Cross-compile Dockerfile for building static Nmap binaries for multiple arches
+FROM ubuntu:22.04 as builder
+ARG ARCHS=all
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build dependencies and cross-compilation toolchains
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    libssl-dev \
+    zlib1g-dev \
+    libpcap-dev \
+    libpcre3-dev \
+    liblua5.4-dev \
+    gcc-aarch64-linux-gnu \
+    g++-aarch64-linux-gnu \
+    gcc-arm-linux-gnueabihf \
+    g++-arm-linux-gnueabihf \
+    libc6-dev-arm64-cross \
+    libc6-dev-armhf-cross \
+    rsync \
+    file \
+    git \
+    curl \
+    make \
+    python3 \
+    perl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /nmap-build
+
+# Copy the nmap source tree in (the caller should mount or COPY the repo root)
+COPY . .
+RUN git clone https://github.com/nmap/nmap.git
+
+RUN mkdir -p /output
+
+# Build for x86_64 native
+RUN if [ "$ARCHS" = "all" ] || echo "$ARCHS" | grep -qw "x86_64"; then \
+    echo "Building x86_64..." && \
+    export CC=gcc && \
+    export CXX=g++ && \
+    export CFLAGS="-static -O2 -fPIC" && \
+    export CXXFLAGS="-static -O2 -fPIC" && \
+    export LDFLAGS="-static -static-libgcc -static-libstdc++" && \
+    cd nmap && ./configure --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
+    # Ensure liblua Makefile uses ARBIN, patch if needed, then invoke make with ARBIN and default AR for other libs
+    sed -n '1,80p' liblua/Makefile | grep -q "ARBIN" || sed -i "1s|^AR=.*|ARBIN ?= ar\nAR = \$(ARBIN) rcu|" liblua/Makefile && \
+    make static -j$(nproc) CC=gcc CXX=g++ ARBIN=ar RANLIB=ranlib STRIP=strip && \
+    echo "x86_64: liblinear info:" && file liblinear/liblinear.a || true && \
+    strip nmap && cp nmap /output/nmap-x86_64 && make distclean; fi
+
+# Build for ARM64 (aarch64)
+RUN if [ "$ARCHS" = "all" ] || echo "$ARCHS" | grep -qw "arm64"; then \
+    echo "Building ARM64 (aarch64)..." && \
+    export CC=aarch64-linux-gnu-gcc && \
+    export CXX=aarch64-linux-gnu-g++ && \
+    export AR=aarch64-linux-gnu-ar && \
+    export STRIP=aarch64-linux-gnu-strip && \
+    export RANLIB=aarch64-linux-gnu-ranlib && \
+    export CFLAGS="-static -O2 -fPIC" && \
+    export CXXFLAGS="-static -O2 -fPIC" && \
+    export LDFLAGS="-static -static-libgcc -static-libstdc++" && \
+    git clone https://github.com/nmap/nmap.git nmap-arm64 && cd nmap-arm64 && ./configure --host=aarch64-linux-gnu --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
+    mkdir -p /tmp/aarch64-bin && ln -sf /usr/bin/aarch64-linux-gnu-gcc /tmp/aarch64-bin/gcc && ln -sf /usr/bin/aarch64-linux-gnu-g++ /tmp/aarch64-bin/g++ && ln -sf /usr/bin/aarch64-linux-gnu-ar /tmp/aarch64-bin/ar && ln -sf /usr/bin/aarch64-linux-gnu-ranlib /tmp/aarch64-bin/ranlib && ln -sf /usr/bin/aarch64-linux-gnu-strip /tmp/aarch64-bin/strip && export PATH=/tmp/aarch64-bin:$PATH && \
+    make static -j$(nproc) CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ RANLIB=aarch64-linux-gnu-ranlib STRIP=aarch64-linux-gnu-strip && \
+    echo "arm64: cross toolchain version" && aarch64-linux-gnu-gcc --version && aarch64-linux-gnu-ar --version && echo "arm64: liblinear info:" && file liblinear/liblinear.a || true && \
+    aarch64-linux-gnu-strip nmap && cp nmap /output/nmap-arm64 && make distclean; fi
+
+# Build for ARM32 (armhf)
+RUN if [ "$ARCHS" = "all" ] || echo "$ARCHS" | grep -qw "arm32"; then \
+    echo "Building ARM32 (armhf)..." && \
+    export CC=arm-linux-gnueabihf-gcc && \
+    export CXX=arm-linux-gnueabihf-g++ && \
+    export AR=arm-linux-gnueabihf-ar && \
+    export STRIP=arm-linux-gnueabihf-strip && \
+    export RANLIB=arm-linux-gnueabihf-ranlib && \
+    export CFLAGS="-static -O2 -fPIC" && \
+    export CXXFLAGS="-static -O2 -fPIC" && \
+    export LDFLAGS="-static -static-libgcc -static-libstdc++" && \
+    git clone https://github.com/nmap/nmap.git nmap-arm32 && cd nmap-arm32 && ./configure --host=arm-linux-gnueabihf --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
+    # Create cross-toolchain symlinks in PATH so 'ar', 'ranlib', 'strip', 'gcc', and 'g++' are the cross tools
+    mkdir -p /tmp/arm32-bin && ln -sf /usr/bin/arm-linux-gnueabihf-gcc /tmp/arm32-bin/gcc && ln -sf /usr/bin/arm-linux-gnueabihf-g++ /tmp/arm32-bin/g++ && ln -sf /usr/bin/arm-linux-gnueabihf-ar /tmp/arm32-bin/ar && ln -sf /usr/bin/arm-linux-gnueabihf-ranlib /tmp/arm32-bin/ranlib && ln -sf /usr/bin/arm-linux-gnueabihf-strip /tmp/arm32-bin/strip && export PATH=/tmp/arm32-bin:$PATH && \
+    make static -j$(nproc) CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ RANLIB=arm-linux-gnueabihf-ranlib STRIP=arm-linux-gnueabihf-strip && \
+    echo "arm32: cross toolchain version" && arm-linux-gnueabihf-gcc --version && arm-linux-gnueabihf-ar --version && echo "arm32: liblinear info:" && file liblinear/liblinear.a || true && \
+    arm-linux-gnueabihf-strip nmap && cp nmap /output/nmap-arm32 && make distclean; fi
+
+# Verify binaries
+RUN echo "Verifying binaries..." && for binary in /output/nmap-*; do echo "=== $(basename $binary) ===" && file "$binary" && ls -lh "$binary" && echo; done
+
+# Final stage
+FROM scratch as output
+COPY --from=builder /output/ /

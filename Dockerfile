@@ -1,8 +1,32 @@
-FROM andrewd/musl-cross
-MAINTAINER Andrew Dunham <andrew@du.nham.ca>
+FROM alpine:latest
+LABEL maintainer="Andrew Dunham <andrew@du.nham.ca>"
+
+# Install build dependencies and ARM cross-compilation toolchain
+RUN apk add --no-cache \
+    bash \
+    curl \
+    git \
+    make \
+    python3 \
+    perl \
+    linux-headers \
+    gcc \
+    g++ \
+    musl-dev \
+    && wget -O /tmp/arm-linux-musleabihf-cross.tgz https://musl.cc/arm-linux-musleabihf-cross.tgz \
+    && cd /opt && tar -xzf /tmp/arm-linux-musleabihf-cross.tgz \
+    && rm /tmp/arm-linux-musleabihf-cross.tgz
+
+# Set up cross-compilation environment
+ENV PATH="/opt/arm-linux-musleabihf-cross/bin:${PATH}"
+ENV CC="arm-linux-musleabihf-gcc"
+ENV CXX="arm-linux-musleabihf-g++"
+ENV AR="arm-linux-musleabihf-ar"
+ENV STRIP="arm-linux-musleabihf-strip"
 
 # Add our build script
-ADD build.sh /build/build.sh
+COPY build.sh /build/build.sh
+RUN chmod +x /build/build.sh
 
 # This builds the program and copies it to /output
-CMD /build/build.sh
+CMD ["/bin/bash", "/build/build.sh"]

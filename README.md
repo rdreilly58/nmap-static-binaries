@@ -19,6 +19,90 @@ docker run --rm -v ${PWD}/:/output/ nmap-build
 ```
 The executables will be in the output directory
 
+## Building for ARM64
+
+If you want to build static ARM64 (aarch64) binaries, there is a dedicated Dockerfile and helper script.
+
+Requirements: Docker Buildx and QEMU emulation enabled (Docker Desktop typically supports this).
+
+To build and extract the ARM64 binaries:
+
+```sh
+# Build the ARM64 image and load it locally
+docker buildx build --platform linux/arm64 -t nmap-build-arm64 -f Dockerfile.aarch64 --load .
+
+# Run the container (use --platform to ensure it runs under the right emulation if needed)
+mkdir -p output
+docker run --rm --platform linux/arm64 -v ${PWD}/output:/output nmap-build-arm64
+```
+
+You can also use the provided `build-arm64.sh` helper, which performs the build and run steps.
+
+Artifacts will be under `output/Linux/<arch>` (e.g. `output/linux/aarch64`), matching `uname -m` reported by the container.
+
+## Building for ARM32 (armhf)
+
+If you want to build static ARM32 (armhf/armv7l) binaries, there is a dedicated Dockerfile and helper script.
+
+Requirements: Docker Buildx and QEMU emulation enabled (Docker Desktop typically supports this).
+
+To build and extract the ARM32 binaries:
+
+```sh
+# Build the ARM32 image and load it locally
+docker buildx build --platform linux/arm/v7 -t nmap-build-arm32 -f Dockerfile.armhf --load .
+
+# Run the container (use --platform to ensure it runs under the right emulation if needed)
+mkdir -p output
+docker run --rm --platform linux/arm/v7 -v ${PWD}/output:/output nmap-build-arm32
+```
+
+You can also use the provided `build-arm32.sh` helper, which performs the build and run steps.
+
+Artifacts will be under `output/Linux/<arch>` (e.g. `output/linux/armv7l`), matching `uname -m` reported by the container.
+
+## Host detection and cross-compile modes
+
+The provided scripts can detect your host architecture and pick an appropriate strategy:
+
+- If your host is the same architecture as the target (e.g., building on an aarch64 host), the per-arch scripts will perform a native build using that Dockerfile.
+- If you're on a different host, the scripts will prefer Docker Buildx to build using QEMU emulation (recommended).
+- If Buildx is not available, the scripts fall back to a cross-compile Docker image that uses cross compiler toolchains (`Dockerfile.cross`).
+
+Commands:
+
+```sh
+# Build a specific arch (with auto host detection / buildx fallback)
+./build-arm64.sh
+./build-arm32.sh
+
+# Build everything (prefers host-native for same arch, buildx where available, and falls back to cross-compile Dockerfile)
+./build-all.sh
+
+# Cross-build using a Debian container with cross toolchains (no qemu needed)
+./build-cross.sh
+```
+
+Notes:
+
+- Docker Buildx + QEMU provides convenience but may be slower due to emulation. The cross-compile Dockerfile avoids QEMU by using native cross toolchains installed in the container.
+- When cross-compiling, we set environment variables in the build container so OpenSSL and Nmap configure steps use the cross toolchains.
+
+Advanced: CROSS_HOST and TARGET_ARCH
+
+If you prefer to use the `build.sh` entrypoint, set the `CROSS_HOST` and `TARGET_ARCH` environment variables when running a container to force cross-build behavior.
+
+Examples:
+
+```sh
+# Force cross-compile using CROSS_HOST in a build container
+docker run --rm -e CROSS_HOST=aarch64-linux-gnu -e TARGET_ARCH=aarch64 -v ${PWD}/output:/output nmap-build-cross
+
+# Or use the helper to cross-compile all arches
+./build-cross.sh
+```
+
+
 # Usage
 
 ## scan.sh
