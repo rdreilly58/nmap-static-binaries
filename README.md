@@ -1,4 +1,5 @@
 # nmap-static-binaries
+<<<<<<< HEAD
 
 Pivoting with static binaries
 
@@ -176,3 +177,6 @@ Build scripts modified by opinfosec on 28-Oct-22
 - Added removing of shared in libz
 - Modified nmap version to latest from github
 - Updated OpenSSL to 1.1.1q
+=======
+Generate nmap binaries
+>>>>>>> 0a87811 (Initial commit)
