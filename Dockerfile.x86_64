@@ -14,8 +14,9 @@ RUN apk add --no-cache \
     automake \
     libtool
 
-# Add our build script
+# Add our build script and dependencies
 COPY build-x86_64.sh /build/build.sh
+COPY deps/ /build/deps/
 RUN chmod +x /build/build.sh
 
 # This builds the program and copies it to /output

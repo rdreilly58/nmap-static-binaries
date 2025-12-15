@@ -7,8 +7,8 @@ set -x
 function build_nmap() {
     cd /build
 
-    # Download
-    git clone https://github.com/nmap/nmap.git
+    # Use local nmap copy instead of cloning
+    cp -r /build/deps/nmap .
     cd nmap
 
     # Configure (without OpenSSL to avoid cross-compilation issues)

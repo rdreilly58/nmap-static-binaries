@@ -35,7 +35,8 @@ WORKDIR /nmap-build
 
 # Copy the nmap source tree in (the caller should mount or COPY the repo root)
 COPY . .
-RUN git clone https://github.com/nmap/nmap.git
+COPY deps/ /nmap-build/deps/
+RUN cp -r deps/nmap .
 
 RUN mkdir -p /output
 
@@ -65,7 +66,7 @@ RUN if [ "$ARCHS" = "all" ] || echo "$ARCHS" | grep -qw "arm64"; then \
     export CFLAGS="-static -O2 -fPIC" && \
     export CXXFLAGS="-static -O2 -fPIC" && \
     export LDFLAGS="-static -static-libgcc -static-libstdc++" && \
-    git clone https://github.com/nmap/nmap.git nmap-arm64 && cd nmap-arm64 && ./configure --host=aarch64-linux-gnu --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
+    cp -r deps/nmap nmap-arm64 && cd nmap-arm64 && ./configure --host=aarch64-linux-gnu --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
     mkdir -p /tmp/aarch64-bin && ln -sf /usr/bin/aarch64-linux-gnu-gcc /tmp/aarch64-bin/gcc && ln -sf /usr/bin/aarch64-linux-gnu-g++ /tmp/aarch64-bin/g++ && ln -sf /usr/bin/aarch64-linux-gnu-ar /tmp/aarch64-bin/ar && ln -sf /usr/bin/aarch64-linux-gnu-ranlib /tmp/aarch64-bin/ranlib && ln -sf /usr/bin/aarch64-linux-gnu-strip /tmp/aarch64-bin/strip && export PATH=/tmp/aarch64-bin:$PATH && \
     make static -j$(nproc) CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ RANLIB=aarch64-linux-gnu-ranlib STRIP=aarch64-linux-gnu-strip && \
     echo "arm64: cross toolchain version" && aarch64-linux-gnu-gcc --version && aarch64-linux-gnu-ar --version && echo "arm64: liblinear info:" && file liblinear/liblinear.a || true && \
@@ -82,7 +83,7 @@ RUN if [ "$ARCHS" = "all" ] || echo "$ARCHS" | grep -qw "arm32"; then \
     export CFLAGS="-static -O2 -fPIC" && \
     export CXXFLAGS="-static -O2 -fPIC" && \
     export LDFLAGS="-static -static-libgcc -static-libstdc++" && \
-    git clone https://github.com/nmap/nmap.git nmap-arm32 && cd nmap-arm32 && ./configure --host=arm-linux-gnueabihf --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
+    cp -r deps/nmap nmap-arm32 && cd nmap-arm32 && ./configure --host=arm-linux-gnueabihf --enable-static --disable-shared --with-libpcap=included --with-libpcre=included --with-libdnet=included --with-liblua=included --with-liblinear=included --with-libssh2=included --with-libz=included --without-zenmap --without-ndiff --without-nping --without-ncat --without-openssl && \
     # Create cross-toolchain symlinks in PATH so 'ar', 'ranlib', 'strip', 'gcc', and 'g++' are the cross tools
     mkdir -p /tmp/arm32-bin && ln -sf /usr/bin/arm-linux-gnueabihf-gcc /tmp/arm32-bin/gcc && ln -sf /usr/bin/arm-linux-gnueabihf-g++ /tmp/arm32-bin/g++ && ln -sf /usr/bin/arm-linux-gnueabihf-ar /tmp/arm32-bin/ar && ln -sf /usr/bin/arm-linux-gnueabihf-ranlib /tmp/arm32-bin/ranlib && ln -sf /usr/bin/arm-linux-gnueabihf-strip /tmp/arm32-bin/strip && export PATH=/tmp/arm32-bin:$PATH && \
     make static -j$(nproc) CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ RANLIB=arm-linux-gnueabihf-ranlib STRIP=arm-linux-gnueabihf-strip && \

@@ -37,9 +37,8 @@ fi
 function build_openssl() {
     cd /build
 
-    # Download
-    curl -LOk https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
-    tar zxvf openssl-${OPENSSL_VERSION}.tar.gz
+    # Use local OpenSSL copy instead of downloading
+    cp -r /build/deps/openssl-${OPENSSL_VERSION} .
     cd openssl-${OPENSSL_VERSION}
 
     # Configure: pick the right Configure target for OpenSSL based on arch
@@ -69,12 +68,9 @@ function build_nmap() {
 
     # Python is already installed in the container
 
-    # Download
-    #curl -LOk http://nmap.org/dist/nmap-${NMAP_VERSION}.tar.bz2
-    #tar xjvf nmap-${NMAP_VERSION}.tar.bz2
-    #cd nmap-${NMAP_VERSION}
-	git clone https://github.com/nmap/nmap.git
-	cd nmap
+    # Use local nmap copy instead of cloning
+    cp -r /build/deps/nmap .
+    cd nmap
 
     # Configure (pick arch-aware flags if needed)
     if [ -n "${CROSS_CC:-}" ]; then

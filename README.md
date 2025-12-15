@@ -169,6 +169,31 @@ full-scan.sh 192.168.0.1
 - Individual Port Scans
   - \<IP\>_tcp\_\<port\>_nmap.txt
 
+# Dependencies
+
+This repository now includes local copies of dependencies to ensure reproducible builds and offline capability.
+
+## Local Dependencies
+
+The build process uses local copies of dependencies located in the `deps/` directory instead of downloading them during build time:
+
+### OpenSSL
+- Version: 1.1.1w
+- Used for SSL/TLS functionality in nmap
+
+### Nmap Source Code  
+- Version: Latest from GitHub (bleeding edge)
+- The complete nmap source repository
+
+This provides:
+- Reproducible builds
+- Offline build capability
+- Version control over dependencies  
+- Faster build times
+- Consistent source across all builds
+
+See `deps/README.md` for more information about managing dependencies.
+
 # Credits
 
 The build scripts are taken from Andrew-d's github page at https://github.com/andrew-d/static-binaries
@@ -177,6 +202,8 @@ Build scripts modified by opinfosec on 28-Oct-22
 - Added removing of shared in libz
 - Modified nmap version to latest from github
 - Updated OpenSSL to 1.1.1q
-=======
-Generate nmap binaries
->>>>>>> 0a87811 (Initial commit)
+
+Additional modifications:
+- Added local dependency management (OpenSSL and Nmap)
+- Updated all build scripts and Dockerfiles to use local copies
+- Eliminated external dependencies during build process

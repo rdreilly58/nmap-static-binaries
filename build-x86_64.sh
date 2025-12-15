@@ -9,9 +9,8 @@ OPENSSL_VERSION=1.1.1w
 function build_openssl() {
     cd /build
 
-    # Download
-    curl -LOk https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
-    tar zxvf openssl-${OPENSSL_VERSION}.tar.gz
+    # Use local OpenSSL copy instead of downloading
+    cp -r /build/deps/openssl-${OPENSSL_VERSION} .
     cd openssl-${OPENSSL_VERSION}
 
     # Configure
@@ -29,8 +28,8 @@ function build_openssl() {
 function build_nmap() {
     cd /build
 
-    # Download
-    git clone https://github.com/nmap/nmap.git
+    # Use local nmap copy instead of cloning
+    cp -r /build/deps/nmap .
     cd nmap
 
     # Configure

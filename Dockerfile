@@ -24,8 +24,9 @@ ENV CXX="arm-linux-musleabihf-g++"
 ENV AR="arm-linux-musleabihf-ar"
 ENV STRIP="arm-linux-musleabihf-strip"
 
-# Add our build script
+# Add our build script and dependencies
 COPY build.sh /build/build.sh
+COPY deps/ /build/deps/
 RUN chmod +x /build/build.sh
 
 # This builds the program and copies it to /output
