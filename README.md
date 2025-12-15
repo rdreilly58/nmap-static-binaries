@@ -1,11 +1,10 @@
 # nmap-static-binaries
-<<<<<<< HEAD
 
 Pivoting with static binaries
 
 # Linux Arch Types
 
-Updated versin of nmap is x86_64 from github
+Updated version of nmap is x86_64 from github
 
 There are 2 different version of static nmap binaries, one is for x86 architectures and the other is for x64.  Included in the repository are two .gz files that have already been compiled with version 7.93 of Nmap.  If you don't need to modify the nmap version, you can just grab those two .gz files in the release area and unarchive them on your target.
 
@@ -196,10 +195,7 @@ See `deps/README.md` for more information about managing dependencies.
 
 # Credits
 
-The build scripts are taken from Andrew-d's github page at https://github.com/andrew-d/static-binaries
-
-Build scripts modified by opinfosec on 28-Oct-22
-- Added removing of shared in libz
+- Bob Reilly
 - Modified nmap version to latest from github
 - Updated OpenSSL to 1.1.1q
 
